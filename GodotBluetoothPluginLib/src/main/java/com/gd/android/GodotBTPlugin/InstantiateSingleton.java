@@ -46,7 +46,7 @@ public class InstantiateSingleton extends GodotPlugin
 
     private final int REQUEST_ENABLE_BT = 1;
     private final int REQUEST_DISCOVER_BT = 2;
-    private final int REQUEST_PERMISSION_COARSE_LOCATION = 3;
+    private final int REQUEST_PERMISSION_FINE_LOCATION = 3;
 
     private ServerSocketThread m_ServerSocketThread;
     private ClientSocketThread m_ClientSocketThread;
@@ -57,6 +57,7 @@ public class InstantiateSingleton extends GodotPlugin
 
     /**
      * Constructor called by GODOT at game start
+     *
      * @param godot
      */
     public InstantiateSingleton (Godot godot)
@@ -143,6 +144,7 @@ public class InstantiateSingleton extends GodotPlugin
 
     /**
      * callBack from onActivity result from the main activity
+     *
      * @param requestCode
      * @param resultCode
      * @param data
@@ -252,7 +254,8 @@ public class InstantiateSingleton extends GodotPlugin
 
     /**
      * Start a server thread that will accept 1 connection
-     * @param name name of the service/game you'll be using this bluetooth socket for
+     *
+     * @param name     name of the service/game you'll be using this bluetooth socket for
      * @param UUID_str the UUI as a String for this service
      */
     public void OpenServerSocket (String name, String UUID_str)
@@ -314,6 +317,7 @@ public class InstantiateSingleton extends GodotPlugin
 
     /**
      * Write a message from the server to the client
+     *
      * @param message the message as a string
      */
     public void ServerConnectionWrite (String message)
@@ -331,7 +335,8 @@ public class InstantiateSingleton extends GodotPlugin
 
     /**
      * Start a client thread that will try to connect to a server
-     * @param UUID_str the UUI as a String for this service
+     *
+     * @param UUID_str       the UUI as a String for this service
      * @param MACAddress_str the MAC address of the server you want to connect to
      */
     public void ConnectClient (String UUID_str, String MACAddress_str)
@@ -386,6 +391,7 @@ public class InstantiateSingleton extends GodotPlugin
 
     /**
      * Write a message to the server
+     *
      * @param message message to write as a string
      */
     public void ClientConnectionWrite (String message)
@@ -405,29 +411,35 @@ public class InstantiateSingleton extends GodotPlugin
     /////////////////////////////////////////
 
     /**
-     * In order to discover and be discovered via bluetooth, we need access to the coarse location
+     * In order to discover and be discovered via bluetooth, we need access to the location
      * (because FU google)
      */
     public void AskCoarseLocationPermission ()
     {
+
+        // TODO do checks over SDK to figure out what permissions are needed
+
         // The minimum SDK that supports runtime permissions is Marshmallow
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) // m is marshmallow
         {
-
-            if (m_Godot.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+            if (m_Godot.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+                m_Godot.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+                m_Godot.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED)
             {
                 emitSignal("OnEventLog", "PERMISSION ALREADY GRANTED");
             }
             else
             {
-                if (m_Godot.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION))
+                if (m_Godot.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION))
                 {
                     emitSignal("OnEventLog", "SHOW PERMISSION RATIONALE");
                 }
 
                 m_Godot.requestPermissions(new String[]{
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                }, REQUEST_PERMISSION_COARSE_LOCATION);
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                }, REQUEST_PERMISSION_FINE_LOCATION);
             }
         }
         else
@@ -440,7 +452,7 @@ public class InstantiateSingleton extends GodotPlugin
     @Override
     public void onMainRequestPermissionsResult (int requestCode, String[] permissions, int[] grantResults)
     {
-        if (requestCode == REQUEST_PERMISSION_COARSE_LOCATION)
+        if (requestCode == REQUEST_PERMISSION_FINE_LOCATION)
         {
             for (int i = 0; i < permissions.length; i++)
             {
@@ -552,6 +564,7 @@ public class InstantiateSingleton extends GodotPlugin
      * Will start the discovery procedure
      * May ask user for permission to do so
      */
+    // TODO ask to enalbe location services because F U GOOGLE
     public void StartDiscovering ()
     {
         if (HasBTAdaptor())
